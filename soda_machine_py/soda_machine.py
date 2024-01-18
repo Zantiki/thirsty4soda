@@ -2,13 +2,14 @@ import abc
 import re
 import string
 from enum import Enum
+from time import sleep
 from typing import Dict
 
 
 class Soda:
 
-    @property
     @classmethod
+    @property
     def name(cls):
         return cls.__name__.lower()
 
@@ -52,7 +53,7 @@ class SodaFactory:
 
 class SodaMachine:
 
-    def __init__(self, inventory: Dict[string, int]):
+    def __init__(self, inventory: Dict[str, int] = None):
         if not inventory:
             inventory = SodaMachine.get_default_inventory()
 
@@ -74,9 +75,9 @@ class SodaMachine:
 
     def show_instructions(self):
         instructions = (f"Available Commands: \n"
-                        f"{SodaActions.insert.value} (money) - put money into the slot\n"
-                        f"{SodaActions.order.value} ({self.get_sodas_available()}) - order from machine buttons\n"
-                        f"{SodaActions.sms_order.value} ({self.get_sodas_available()}) - order sent by sms\n"
+                        f"{SodaActions.insert.value} (money) - put money into money slot\n"
+                        f"{SodaActions.order.value} ({', '.join(self.get_sodas_available())}) - order from machine buttons\n"
+                        f"{SodaActions.sms_order.value} ({', '.join(self.get_sodas_available())}) - order sent by sms\n"
                         f"{SodaActions.recall.value} - gives the money back")
         print(instructions)
 
@@ -92,7 +93,10 @@ class SodaMachine:
         assert number_of_sodas > 0, f"Out of item {action_input}"
         assert self._internal_cash >= soda.price, f"You cannot afford {action_input}"
         print(f"Giving out {soda.name}")
+        self.inventory[action_input] -= 1
         self.subtract_from_cash(soda.price)
+        if self._internal_cash:
+            self.return_cash()
 
     def subtract_from_cash(self, number: float):
         self._internal_cash -= number
@@ -101,12 +105,9 @@ class SodaMachine:
         print(f"Returning {self._internal_cash}")
         self.subtract_from_cash(self._internal_cash)
 
-    def handle_cash_order(self, action_input):
-        try:
-            number_value = float(action_input)
-            self._internal_cash += number_value
-        except ValueError:
-            print(f"{action_input} is not a valid number")
+    def handle_cash_order(self, action_input: str):
+        number_value = float(action_input)
+        self._internal_cash += number_value
         print(f"Added {action_input}")
 
     def handle_order(self, action: str, action_input: str):
@@ -124,14 +125,18 @@ class SodaMachine:
 
     def handle_user_input(self):
         action_values = [action.value for action in SodaActions]
-        action_input_regex = fr"({'|'.join(action_values)}).* - .*"
+        action_input_regex = fr"({'|'.join(action_values)})(.*)"
         user_input = input("What do you want to do?: ")
-
-        input_match = re.match(action_input_regex, user_input)
-        action = input_match.group(0)
-        action_input = input_match.group(1)
-        self.handle_order(action, action_input)
-        print(f"Balance is {self._internal_cash}")
+        try:
+            input_match = re.match(action_input_regex, user_input)
+            action = input_match.group(1)
+            action_input = input_match.group(2)
+            self.handle_order(action, action_input.replace(" ", ""))
+        except Exception as e:
+            print(f"Problems with input: {e}")
+        print(f"Balance is {self._internal_cash}\n\n")
+        # For a bit of feedback before resetting
+        sleep(3)
 
     def start(self):
 
