@@ -5,30 +5,7 @@ from enum import Enum
 from time import sleep
 from typing import Dict
 
-
-class Soda:
-
-    @classmethod
-    @property
-    def name(cls):
-        return cls.__name__.lower()
-
-    @property
-    @abc.abstractmethod
-    def price(self):
-        pass
-
-
-class Coke(Soda):
-    price = 20.00
-
-
-class Fanta(Soda):
-    price = 15.00
-
-
-class Sprite(Soda):
-    price = 15.00
+from soda_machine_py.soda import Coke, Sprite, Fanta, SodaFactory
 
 
 class SodaActions(Enum):
@@ -37,18 +14,6 @@ class SodaActions(Enum):
     sms_order = "sms order"
     recall = "recall"
     kill = "kill"
-
-
-class SodaFactory:
-    _types = {
-        Coke.name: Coke(),
-        Sprite.name: Sprite(),
-        Fanta.name: Fanta()
-    }
-
-    @staticmethod
-    def get_by_name(soda_name: str):
-        return SodaFactory._types[soda_name]
 
 
 class SodaMachine:
@@ -135,8 +100,6 @@ class SodaMachine:
         except Exception as e:
             print(f"Problems with input: {e}")
         print(f"Balance is {self._internal_cash}\n\n")
-        # For a bit of feedback before resetting
-        sleep(3)
 
     def start(self):
 
